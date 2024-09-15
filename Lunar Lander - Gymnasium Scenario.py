@@ -12,9 +12,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-import torch.autograd as autograd
-from torch.autograd import Variable
-from collections import deque, namedtuple
+from collections import deque
 import gymnasium as gym
 
 # Criando o "Cérebro" - Neural Networks
@@ -163,13 +161,8 @@ for episodes in range(1, number_episodes + 1):
 
 # Cria um vídeo com uma execução do cenário com o modelo treinado - Testado no Windows 11   
      
-import glob
-import io
-import base64
-import imageio
 
-from IPython.display import HTML, display
-from gym.wrappers.monitoring.video_recorder import VideoRecorder
+import imageio
 
 def resize_frame(frame, block_size=16):
     height, width, _ = frame.shape

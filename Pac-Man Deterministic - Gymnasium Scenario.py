@@ -6,15 +6,13 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from collections import deque
-from torch.utils.data import DataLoader, TensorDataset
 import gymnasium as gym
 from PIL import Image
 from torchvision import transforms
 import imageio
 import tkinter as tk
 from tkvideo import tkvideo
-from IPython.display import HTML, display
-from gym.wrappers.monitoring.video_recorder import VideoRecorder
+
 
 class Network(nn.Module):
     def __init__(self, action_size, seed = 42):
