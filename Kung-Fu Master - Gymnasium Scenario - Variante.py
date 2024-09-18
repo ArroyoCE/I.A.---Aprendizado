@@ -19,9 +19,9 @@ class Network(nn.Module):
         self.conv2 = torch.nn.Conv2d(in_channels=32, out_channels=32, kernel_size=(3,3), stride=2)
         self.conv3 = torch.nn.Conv2d(in_channels=32, out_channels=32, kernel_size=(3,3), stride=2)
         self.flat = torch.nn.Flatten()
-        self.fc1 = torch.nn.Linear(512, 128)
-        self.fc2a = torch.nn.Linear(128, out_features=action_size)
-        self.fc2s = torch.nn.Linear(128, 1)
+        self.fc1 = torch.nn.Linear(512, 1024)
+        self.fc2a = torch.nn.Linear(1024, out_features=action_size)
+        self.fc2s = torch.nn.Linear(1024, 1)
 
     def forward(self, state):
         x = self.conv1(state)
