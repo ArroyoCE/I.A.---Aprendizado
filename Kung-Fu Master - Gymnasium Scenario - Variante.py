@@ -12,6 +12,7 @@ import tkinter as tk
 from tkvideo import tkvideo
 import os
 
+
 class Network(nn.Module):
     def __init__(self, action_size):
         super(Network, self).__init__()
@@ -78,7 +79,7 @@ class PreprocessAtari(ObservationWrapper):
     self.frames = self.observation(obs)
 
 def make_env():
-  env = gym.make("KungFuMasterDeterministic-v0", render_mode = 'rgb_array')
+  env = gym.make(r'KungFuMasterNoFrameskip-v0', render_mode = 'rgb_array')
   env = PreprocessAtari(env, height = 42, width = 42, crop = lambda img: img, dim_order = 'pytorch', color = False, n_frames = 4)
   return env
 
