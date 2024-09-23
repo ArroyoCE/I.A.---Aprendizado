@@ -8,7 +8,9 @@ from PIL import Image
 from tqdm import tqdm
 import torch.nn.functional as F
 from torch.utils.checkpoint import checkpoint
-from torch.cuda.amp import GradScaler
+from torch.amp import autocast, GradScaler
+
+
 
 
 def to_float_tensor(x):
@@ -35,21 +37,20 @@ class UNet(nn.Module):
         self.n_channels = n_channels
         self.n_classes = n_classes
 
-        self.inc = DoubleConv(n_channels, 32)
-        self.down1 = nn.Sequential(nn.MaxPool2d(2), DoubleConv(32, 64))
-        self.down2 = nn.Sequential(nn.MaxPool2d(2), DoubleConv(64, 128))
-        self.down3 = nn.Sequential(nn.MaxPool2d(2), DoubleConv(128, 256))
-        self.down4 = nn.Sequential(nn.MaxPool2d(2), DoubleConv(256, 512))
-
-        self.up1 = nn.ConvTranspose2d(512, 256, 2, stride=2)
-        self.conv1 = DoubleConv(512, 256)
-        self.up2 = nn.ConvTranspose2d(256, 128, 2, stride=2)
-        self.conv2 = DoubleConv(256, 128)
-        self.up3 = nn.ConvTranspose2d(128, 64, 2, stride=2)
-        self.conv3 = DoubleConv(128, 64)
-        self.up4 = nn.ConvTranspose2d(64, 32, 2, stride=2)
-        self.conv4 = DoubleConv(64, 32)
-        self.outc = nn.Conv2d(32, n_classes, 1)
+        self.inc = DoubleConv(n_channels, 64)
+        self.down1 = nn.Sequential(nn.MaxPool2d(2), DoubleConv(64, 128))
+        self.down2 = nn.Sequential(nn.MaxPool2d(2), DoubleConv(128, 256))
+        self.down3 = nn.Sequential(nn.MaxPool2d(2), DoubleConv(256, 512))
+        self.down4 = nn.Sequential(nn.MaxPool2d(2), DoubleConv(512, 1024))
+        self.up1 = nn.ConvTranspose2d(1024, 512, 2, stride=2)
+        self.conv1 = DoubleConv(1024, 512)
+        self.up2 = nn.ConvTranspose2d(512, 256, 2, stride=2)
+        self.conv2 = DoubleConv(512, 256)
+        self.up3 = nn.ConvTranspose2d(256, 128, 2, stride=2)
+        self.conv3 = DoubleConv(256, 128)
+        self.up4 = nn.ConvTranspose2d(128, 64, 2, stride=2)
+        self.conv4 = DoubleConv(128, 64)
+        self.outc = nn.Conv2d(64, n_classes, 1)
 
     def forward(self, x):
         # Calculate dynamic padding
@@ -59,11 +60,11 @@ class UNet(nn.Module):
         x = F.pad(x, (0, pad_w, 0, pad_h), mode='reflect')
 
         # Encoder (with explicit checkpoint import)
-        x1 = checkpoint(self.inc, x, use_reentrant=False)
-        x2 = checkpoint(self.down1, x1, use_reentrant=False)
-        x3 = checkpoint(self.down2, x2, use_reentrant=False)
-        x4 = checkpoint(self.down3, x3, use_reentrant=False)
-        x5 = checkpoint(self.down4, x4, use_reentrant=False)
+        x1 = checkpoint(self.inc, x, use_reentrant=False, preserve_rng_state=False)
+        x2 = checkpoint(self.down1, x1, use_reentrant=False, preserve_rng_state=False)
+        x3 = checkpoint(self.down2, x2, use_reentrant=False, preserve_rng_state=False)
+        x4 = checkpoint(self.down3, x3, use_reentrant=False, preserve_rng_state=False)
+        x5 = checkpoint(self.down4, x4, use_reentrant=False, preserve_rng_state=False)
 
         # Decoder (without gradient checkpointing for simplicity)
         x = self.up1(x5)
@@ -145,8 +146,9 @@ class CombinedLoss(nn.Module):
 
 def train_model(model: nn.Module, dataloader: torch.utils.data.DataLoader,
                 criterion: nn.Module, optimizer: optim.Optimizer,
-                device: torch.device, num_epochs: int, scaler: GradScaler):
-    for epoch in range(num_epochs):
+                device: torch.device, num_epochs: int, scaler: GradScaler,
+                output_dir: str, start_epoch: int = 0):
+    for epoch in range(start_epoch, num_epochs):
         model.train()
         running_loss = 0.0
 
@@ -156,7 +158,7 @@ def train_model(model: nn.Module, dataloader: torch.utils.data.DataLoader,
 
             optimizer.zero_grad()
 
-            with torch.cuda.amp.autocast():
+            with autocast(device_type=device.type):
                 outputs = model(source)
                 loss = criterion(outputs, target)
 
@@ -169,6 +171,15 @@ def train_model(model: nn.Module, dataloader: torch.utils.data.DataLoader,
         epoch_loss = running_loss / len(dataloader)
         print(f"Epoch {epoch + 1}/{num_epochs}, Loss: {epoch_loss:.4f}")
 
+        # Save the model after each epoch
+        torch.save({
+            'epoch': epoch + 1,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'loss': epoch_loss,
+        }, os.path.join(output_dir, "unet_model.pth"))
+        print(f"Model saved after epoch {epoch + 1}")
+
     print("Training completed!")
 
 
@@ -178,7 +189,7 @@ if __name__ == "__main__":
     source_dir = "./source_dir"
     target_dir = "./target_dir"
     output_dir = "./output_dir"
-    num_epochs = 500
+    num_epochs = 100
     batch_size = 1
     learning_rate = 0.0001
 
@@ -197,11 +208,17 @@ if __name__ == "__main__":
     criterion = CombinedLoss(alpha=0.5, beta=0.5)
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
-    scaler = torch.cuda.amp.GradScaler()
+    scaler = GradScaler()
 
-    train_model(model, dataloader, criterion, optimizer, device, num_epochs, scaler)
-    # Save the model
+    # Check if there's an existing model to load
+    if os.path.exists(os.path.join(output_dir, "unet_model.pth")):
+        print("Loading existing model...")
+        model.load_state_dict(torch.load(os.path.join(output_dir, "unet_model.pth")))
+        print("Existing model loaded. Continuing training...")
+
+    # Create output directory if it doesn't exist
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-    torch.save(model.state_dict(), os.path.join(output_dir, "unet_model.pth"))
-    print(f"Model saved to {output_dir}")
+
+    train_model(model, dataloader, criterion, optimizer, device, num_epochs, scaler, output_dir)
+    print(f"Final model saved to {output_dir}")
