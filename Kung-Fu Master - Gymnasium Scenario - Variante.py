@@ -3,7 +3,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as f
-import gymnasium as gym
+import gym
 from gymnasium import ObservationWrapper
 from gymnasium.spaces import Box
 import tqdm
@@ -13,6 +13,9 @@ from tkvideo import tkvideo
 import os
 
 
+envs = gym.envs.registration.registry.values()
+for env in envs:
+    print(env.id)
 class Network(nn.Module):
     def __init__(self, action_size):
         super(Network, self).__init__()
@@ -78,10 +81,19 @@ class PreprocessAtari(ObservationWrapper):
   def update_buffer(self, obs):
     self.frames = self.observation(obs)
 
+
 def make_env():
-  env = gym.make(r'KungFuMasterNoFrameskip-v0', render_mode = 'rgb_array')
-  env = PreprocessAtari(env, height = 42, width = 42, crop = lambda img: img, dim_order = 'pytorch', color = False, n_frames = 4)
-  return env
+    try:
+        env = gym.make('KungFuMasterNoFrameskip-v0', render_mode='rgb_array')
+    except gym.error.NameNotFound:
+        try:
+            env = gym.make('ALE/KungFuMaster-v5', render_mode='rgb_array')
+        except gym.error.NameNotFound:
+            raise Exception(
+                "KungFuMaster environment not found. Please check available environments or choose an alternative.")
+
+    env = PreprocessAtari(env, height=42, width=42, crop=lambda img: img, dim_order='pytorch', color=False, n_frames=4)
+    return env
 
 env = make_env()
 state_shape = env.observation_space.shape

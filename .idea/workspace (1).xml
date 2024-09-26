@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="4bb2931e-0b93-4327-9fb4-5a682fe5d103" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/I.A. - Aprendizado.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/I.A. - Aprendizado.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 2
+}</component>
+  <component name="ProjectId" id="2m1a18c0ySDZgiP0nys03LMeZDs" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Python.Computação Gráfica - Algoritimo de Preenchimento.executor": "Run",
+    "Python.Image2Image - Scans - Low GPU.executor": "Run",
+    "Python.Image2Image - Scans.executor": "Run",
+    "Python.Image2Image - Trained Model Usage - Low GPU.executor": "Run",
+    "Python.Image2Image - Trained Model Usage.executor": "Run",
+    "Python.Image2Image_Scans_Low_GPU.executor": "Run",
+    "Python.Image2Image_Scans_Low_GPU_flexibleimage.executor": "Run",
+    "Python.Image_Transformation.executor": "Run",
+    "Python.Image_Transformation_Low_GPU.executor": "Run",
+    "Python.Kung-Fu Master - Gymnasium Scenario - Variante.executor": "Run",
+    "Python.Kung-Fu Master - Gymnasium Scenario.executor": "Run",
+    "Python.LLM - Medical Terms Using Llama2.executor": "Run",
+    "Python.Lunar Lander - Gymnasium Scenario.executor": "Run",
+    "Python.Pac-Man Deterministic - Gymnasium Scenario.executor": "Run",
+    "Python.Pac-Man Deterministic - Variante.executor": "Run",
+    "Python.fff.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "main",
+    "ignore.virus.scanning.warn.message": "true",
+    "last_opened_file_path": "C:/Users/green/MeuDrive/Meu Drive/Documentos/Engenharia da Computação/I.A. - Aprendizado",
+    "run.code.analysis.last.selected.profile": "aDefault"
+  },
+  "keyToStringList": {
+    "com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File": [
+      "Properties"
+    ]
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-python-sdk-884f5ed5d46b-c546a90a8094-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-242.22855.92" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="4bb2931e-0b93-4327-9fb4-5a682fe5d103" name="Changes" comment="" />
+      <created>1726246317616</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1726246317616</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Image_Transformation.py</url>
+          <line>56</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+</project>

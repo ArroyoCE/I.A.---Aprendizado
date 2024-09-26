@@ -166,7 +166,7 @@ class EnvBatch():
                 next_state[i] = self.envs[i].reset()[0]
         return next_state, rewards, dones, infos, _
 
-
+print(torch.cuda.is_available())
 env_batch = EnvBatch(n_envs=number_enviroments)
 batch_states = env_batch.reset()
 

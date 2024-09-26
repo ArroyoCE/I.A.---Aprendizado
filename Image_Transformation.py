@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torchvision.transforms as transforms
 from torch.utils.data import Dataset, DataLoader
-import torch.nn.functional as F
+import torch.nn.functional as f
 from PIL import Image
 import os
 
@@ -19,9 +19,9 @@ class TransformationParamNet(nn.Module):
         self.dropout = nn.Dropout(0.5)
 
     def forward(self, x):
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
-        x = F.relu(self.conv3(x))
+        x = f.relu(self.conv1(x))
+        x = f.relu(self.conv2(x))
+        x = f.relu(self.conv3(x))
         x = self.pool(x)
         x = x.view(x.size(0), -1)
         x = self.dropout(x)
@@ -33,7 +33,7 @@ class ImageAlterationDataset(Dataset):
     def __init__(self, input_dir, target_dir, image_size=(5100, 8400)):
         self.input_dir = input_dir
         self.target_dir = target_dir
-        self.image_files = [f for f in os.listdir(input_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+        self.image_files = [F for F in os.listdir(input_dir) if F.lower().endswith(('.png', '.jpg', '.jpeg'))]
         self.image_size = image_size
         self.transform = transforms.Compose([
             transforms.Resize(image_size),
@@ -74,8 +74,8 @@ def rotate_image(image, angle, device):
         [torch.cos(angle), -torch.sin(angle), 0],
         [torch.sin(angle), torch.cos(angle), 0]
     ], dtype=torch.float, device=device)
-    grid = F.affine_grid(theta.unsqueeze(0), image.unsqueeze(0).size(), align_corners=False)
-    return F.grid_sample(image.unsqueeze(0), grid, align_corners=False).squeeze(0)
+    grid = f.affine_grid(theta.unsqueeze(0), image.unsqueeze(0).size(), align_corners=False)
+    return f.grid_sample(image.unsqueeze(0), grid, align_corners=False).squeeze(0)
 
 
 def differentiable_crop(image, crop_x, crop_y, crop_w, crop_h, device):
@@ -95,8 +95,8 @@ def differentiable_crop(image, crop_x, crop_y, crop_w, crop_h, device):
         [0, 2 / (y2 - y1), -1 - 2 * y1 / (y2 - y1)]
     ], dtype=torch.float, device=device)
 
-    grid = F.affine_grid(theta.unsqueeze(0), image.unsqueeze(0).size(), align_corners=False)
-    return F.grid_sample(image.unsqueeze(0), grid, align_corners=False).squeeze(0)
+    grid = f.affine_grid(theta.unsqueeze(0), image.unsqueeze(0).size(), align_corners=False)
+    return f.grid_sample(image.unsqueeze(0), grid, align_corners=False).squeeze(0)
 
 
 def adjust_brightness(image, brightness):
@@ -113,23 +113,62 @@ def adjust_saturation(image, saturation):
     return torch.clamp((image - gray) * saturation + gray, 0, 1)
 
 
+def rgb_to_hsv(rgb):
+    r, g, b = rgb.unbind(0)
+    max_rgb, argmax_rgb = rgb.max(0)
+    min_rgb, _ = rgb.min(0)
+    diff = max_rgb - min_rgb
+
+    s = torch.where(max_rgb > 0, diff / max_rgb, torch.zeros_like(max_rgb))
+    v = max_rgb
+
+    h = torch.zeros_like(max_rgb)
+    h[argmax_rgb == 0] = (g - b)[argmax_rgb == 0] / diff[argmax_rgb == 0]
+    h[argmax_rgb == 1] = 2.0 + (b - r)[argmax_rgb == 1] / diff[argmax_rgb == 1]
+    h[argmax_rgb == 2] = 4.0 + (r - g)[argmax_rgb == 2] / diff[argmax_rgb == 2]
+    h[diff == 0] = 0
+    h = (h / 6.0) % 1.0
+
+    return torch.stack([h, s, v])
+
+
+def hsv_to_rgb(hsv):
+    h, s, v = hsv.unbind(0)
+    i = (h * 6).long()
+    l = h * 6 - i.float()
+    p = v * (1 - s)
+    q = v * (1 - l * s)
+    t = v * (1 - (1 - l) * s)
+    i = i % 6
+
+    rgb = torch.stack([
+        torch.where(i == 0, v,
+                    torch.where(i == 1, q, torch.where(i == 2, p, torch.where(i == 3, p, torch.where(i == 4, t, v))))),
+        torch.where(i == 0, t,
+                    torch.where(i == 1, v, torch.where(i == 2, v, torch.where(i == 3, q, torch.where(i == 4, p, p))))),
+        torch.where(i == 0, p,
+                    torch.where(i == 1, p, torch.where(i == 2, t, torch.where(i == 3, v, torch.where(i == 4, v, q)))))
+    ])
+
+    return rgb
+
+
 def adjust_hue(image, hue):
-    rgb_to_hsv = torch.tensor([
-        [0.299, 0.587, 0.114],
-        [0.299, 0.587, 0.114],
-        [0.299, 0.587, 0.114]
-    ], device=image.device)
+    # Ensure hue is in the range [-0.5, 0.5]
+    hue = torch.clamp(hue, -0.5, 0.5)
 
-    hsv_to_rgb = torch.tensor([
-        [1, 0, 1],
-        [-0.14713, 0.28886, -0.14713],
-        [0.615, -0.51499, -0.10001]
-    ], device=image.device)
+    # Convert to HSV
+    hsv = rgb_to_hsv(image)
 
-    hsv = torch.matmul(rgb_to_hsv, image.permute(1, 2, 0))
-    hsv[:, :, 0] = (hsv[:, :, 0] + hue) % 1.0
-    rgb = torch.matmul(hsv_to_rgb, hsv.permute(2, 0, 1))
-    return torch.clamp(rgb.permute(1, 2, 0), 0, 1)
+    # Adjust hue
+    h, s, v = hsv.unbind(0)
+    h = (h + hue) % 1.0
+    hsv = torch.stack([h, s, v])
+
+    # Convert back to RGB
+    rgb = hsv_to_rgb(hsv)
+
+    return rgb
 
 
 def train_model(model, train_loader, criterion, optimizer, num_epochs, device):
@@ -143,7 +182,7 @@ def train_model(model, train_loader, criterion, optimizer, num_epochs, device):
             inputs, targets = inputs.to(device), targets.to(device)
 
             optimizer.zero_grad()
-            params = model(inputs)
+            params = model.forward(inputs)
             altered_image = apply_transformations(inputs.squeeze(0), params.squeeze(0), device)
             loss = criterion(altered_image.unsqueeze(0), targets)
             loss.backward()
@@ -160,6 +199,7 @@ def main():
     image_size = (5100, 8400)  # Maintaining the original image size
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(torch.cuda.is_available())
     model = TransformationParamNet().to(device)
     dataset = ImageAlterationDataset(input_dir, target_dir, image_size=image_size)
     dataloader = DataLoader(dataset, batch_size=1, shuffle=True)  # Keeping batch size at 1
