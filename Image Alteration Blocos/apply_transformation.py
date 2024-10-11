@@ -25,7 +25,7 @@ def apply_transformations(
 
     # Apply rotation
     if rotation != 0:
-        angle = rotation.item() / torch.pi  # Convert to degrees, but reduce the range
+        angle = rotation.item() * 180  # Rotação máxima de 180ª para cada lado
         image = TF.rotate(image, angle, interpolation=TF.InterpolationMode.BILINEAR, expand=True)
 
     # Apply crop

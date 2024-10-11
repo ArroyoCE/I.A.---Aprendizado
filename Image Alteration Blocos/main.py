@@ -6,8 +6,8 @@ import torch
 import os
 
 def main():
-    input_dir = "../source_dir"
-    target_dir = "../target_dir"
+    input_dir = "../Pix2Pix/pytorch-CycleGAN-and-pix2pix/datasets/scans/train"
+    target_dir = "../Pix2Pix/pytorch-CycleGAN-and-pix2pix/datasets/scans/test"
     checkpoint_dir = "./checkpoints"
     os.makedirs(checkpoint_dir, exist_ok=True)
 

@@ -95,10 +95,10 @@ class ImprovedStableTransformationParamNet(nn.Module):
 
         # Custom activation for each parameter
         params = torch.zeros_like(x)
-        params[:, 0] = torch.tanh(x[:, 0]) * 5  # rotation: [-5, 5]
+        params[:, 0] = torch.tanh(x[:, 0])  # rotation: [-1, 1]
         params[:, 1:5] = torch.sigmoid(x[:, 1:5]) * 0.4  # crop params: [0, 0.4]
         params[:, 5:7] = torch.sigmoid(x[:, 5:7]) * 0.4 + 0.8  # brightness, contrast: [0.8, 1.2]
-        params[:, 7:10] = torch.sigmoid(x[:, 7:10]) * 0.2 + 0.9  # color adjustments: [0.9, 1.1]
+        params[:, 7:10] = torch.sigmoid(x[:, 7:10]) * 0.7 + 0.8  # color adjustments: [0.7, 1.5]
         params[:, 10] = torch.sigmoid(x[:, 10]) * 0.4 + 0.8  # resize: [0.8, 1.2]
 
         return params

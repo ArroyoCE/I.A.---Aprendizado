@@ -12,7 +12,7 @@ from pytorch_msssim import SSIM
 class PerceptualLoss(nn.Module):
     def __init__(self):
         super(PerceptualLoss, self).__init__()
-        vgg = models.vgg16(pretrained=True).features
+        vgg = models.vgg16(weights=models.VGG16_Weights.IMAGENET1K_V1).features
         self.slice1 = torch.nn.Sequential()
         self.slice2 = torch.nn.Sequential()
         self.slice3 = torch.nn.Sequential()
@@ -48,7 +48,7 @@ def train_model(model, train_loader, optimizer, device, checkpoint_dir, target_d
     mse_criterion = nn.MSELoss()
     ssim_criterion = SSIM(data_range=1.0, size_average=True, channel=3)
     perceptual_criterion = PerceptualLoss().to(device)
-    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10, verbose=True)
+    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10)
 
     start_epoch = load_checkpoint(model, optimizer, os.path.join(checkpoint_dir, "latest_checkpoint.pth"))
 
@@ -89,7 +89,6 @@ def train_model(model, train_loader, optimizer, device, checkpoint_dir, target_d
 
             # Ensure both tensors have the same size
             if transformed_image.shape != target_image.shape:
-                print(f"Size mismatch detected. Transformed: {transformed_image.shape}, Target: {target_image.shape}")
                 min_height = min(transformed_image.shape[2], target_image.shape[2])
                 min_width = min(transformed_image.shape[3], target_image.shape[3])
 
@@ -98,7 +97,7 @@ def train_model(model, train_loader, optimizer, device, checkpoint_dir, target_d
                 target_image = F.interpolate(target_image, size=(min_height, min_width), mode='bilinear',
                                              align_corners=False)
 
-                print(f"After resizing - Transformed: {transformed_image.shape}, Target: {target_image.shape}")
+
 
             # Sanity check
             assert transformed_image.shape == target_image.shape, f"Shapes still don't match after resizing: {transformed_image.shape} vs {target_image.shape}"
@@ -168,7 +167,7 @@ def train_model(model, train_loader, optimizer, device, checkpoint_dir, target_d
 def load_checkpoint(model, optimizer, filename):
     if os.path.isfile(filename):
         print(f"Loading checkpoint '{filename}'")
-        checkpoint = torch.load(filename)
+        checkpoint = torch.load(filename, weights_only=True)
         start_epoch = checkpoint['epoch']
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
